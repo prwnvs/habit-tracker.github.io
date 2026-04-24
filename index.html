@@ -406,9 +406,87 @@
             border-top: 2px solid #e2e8f0;
             margin-top: 30px;
         }
+        .modal {
+
+            position: fixed;
+
+            top: 0; left: 0;
+
+            width: 100%; height: 100%;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            background-color: rgba(0, 0, 0, 0.6);
+
+            z-index: 1000;
+
+            }
+
+            .modal-content {
+
+            background-color: #fff;
+
+            padding: 20px;
+
+            border-radius: 10px;
+
+            text-align: center;
+
+            width: 300px;
+
+            }
+
+            .notice {
+
+            background-color: #e0ffe0;
+
+            border: 1px solid #00a000;
+
+            padding: 10px;
+
+            margin: 10px 0;
+
+            border-radius: 5px;
+
+            text-align: center;
+
+            }
+            /* общий стиль для кнопок авторизации */
+            #openAuth,
+            #logoutBtn {
+            background: linear-gradient(90deg, #7c3aed, #a855f7);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            }
+
+            /* эффект при наведении */
+            #openAuth:hover,
+            #logoutBtn:hover {
+            background: linear-gradient(90deg, #6d28d9, #9333ea);
+            transform: scale(1.05);
+            }
+
+            /* позиционирование кнопки Личный кабинет */
+            #openAuth {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            }    
     </style>
 </head>
 <body>
+<button id="openAuth" style="position:absolute;right:20px;top:20px;">Личный кабинет</button>
     <div class="container">
         <header>
             <h1> Трекер Привычек</h1>
@@ -501,7 +579,7 @@
     </div>
 
     <!-- Модальное окно для редактирования -->
-    <div id="editModal" class="modal">
+    <div id="editModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal()">&times;</span>
             <h2 style="margin-bottom: 25px; color: #1e293b;">✏️ Редактировать привычку</h2>
@@ -910,6 +988,91 @@
             const now = new Date();
             document.querySelector('footer p').innerHTML = 
                 `Каждый день — шаг к лучшей версии себя! | ${now.toLocaleTimeString('ru-RU')} | Данные сохраняются в вашем браузере`;
+        }, 1000);
+    </script>
+<!-- ===== Модальное окно авторизации ===== -->
+<div id="authModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h2>Вход или регистрация</h2>
+    <input type="email" id="userEmail" placeholder="Email" required>
+    <input type="password" id="userPassword" placeholder="Пароль" required>
+    <button id="loginBtn">Войти</button>
+    <button id="registerBtn">Зарегистрироваться</button>
+    <button id="closeAuth">Закрыть</button>
+  </div>
+</div>
+
+<!-- ===== Блок личного кабинета ===== -->
+<div id="userProfile" style="display:none;padding:20px;">
+  <h3>Мой профиль</h3>
+  <p id="userName"></p>
+  <div id="authSuccess" class="notice" style="display:none;"></div>
+
+  <button id="logoutBtn">Выйти</button>
+</div>
+<script>
+  const users = JSON.parse(localStorage.getItem('users')) || {};
+  let currentUser = localStorage.getItem('currentUser');
+
+  const authModal = document.getElementById('authModal');
+  document.getElementById('openAuth').onclick = () => authModal.style.display = 'flex';
+  document.getElementById('closeAuth').onclick = () => authModal.style.display = 'none';
+
+  document.getElementById('registerBtn').onclick = () => {
+    const email = document.getElementById('userEmail').value;
+    const password = document.getElementById('userPassword').value;
+    if (users[email]) return alert('Пользователь уже существует.');
+    users[email] = { password };
+    localStorage.setItem('users', JSON.stringify(users));
+    alert('Регистрация успешна!');
+  };
+
+  document.getElementById('loginBtn').onclick = () => {
+    const email = document.getElementById('userEmail').value;
+    const password = document.getElementById('userPassword').value;
+    if (!users[email] || users[email].password !== password)
+      return alert('Неверный email или пароль.');
+    localStorage.setItem('currentUser', email);
+    currentUser = email;
+    showProfile();
+    authModal.style.display = 'none';
+  };
+
+  document.getElementById('logoutBtn').onclick = () => {
+    localStorage.removeItem('currentUser');
+    currentUser = null;
+    document.getElementById('userProfile').style.display = 'none';
+    document.getElementById('openAuth').style.display = 'block';
+  };
+
+  function showProfile() {
+    if (currentUser) {
+      document.getElementById('userName').textContent = `Вы вошли как: ${currentUser}`;
+      document.getElementById('authSuccess').textContent = 'Авторизация выполнена успешно!';
+      document.getElementById('authSuccess').style.display = 'block';
+      document.getElementById('userProfile').style.display = 'block';
+      document.getElementById('openAuth').style.display = 'none';
+      updateDashboard();
+    }
+  }
+
+  function updateDashboard() {
+    const habits = JSON.parse(localStorage.getItem(`habits_${currentUser}`)) || [];
+    const count = habits.length;
+    const avgProgress = habits.length
+      ? Math.round(habits.map(h => h.progress || 0).reduce((a, b) => a + b, 0) / habits.length)
+      : 0;
+    const streak = Math.floor(Math.random() * 10); // временная заглушка
+    document.getElementById('habitCount').textContent = count;
+    document.getElementById('avgProgress').textContent = avgProgress + '%';
+    document.getElementById('currentStreak').textContent = streak;
+  }
+
+  if (currentUser) showProfile();
+</script>
+</body>
+</html>
+
         }, 1000);
     </script>
 </body>
